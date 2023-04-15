@@ -1,0 +1,21 @@
+version: '3.4'
+
+services:
+  webapi:
+    image: ${DOCKER_REGISTRY-}webapi
+    build:
+      context: .
+      dockerfile: WebApi/Dockerfile
+    depends_on:
+          - db
+    environment:
+        - ConnectionString=Server=db,1433;Database=mydb;User Id=users_admin;Password=UsersAdmin123
+
+  db:
+    image: mcr.microsoft.com/mssql/server:latest
+    environment:
+      - SA_PASSWORD=MyPass@word
+      - ACCEPT_EULA=Y
+      - MSSQL_PID=Express 
+    ports:
+      - "1433:1433"

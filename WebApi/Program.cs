@@ -1,7 +1,11 @@
 using Application;
 using Infrastructure;
+using Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Presentation;
 using Serilog;
+using WebApi.Middlewares;
+using WebApi.OptionsSetup;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,13 +16,27 @@ builder.Services.AddSwaggerGen();
 
 builder.Services
 	.AddApplication()
+	.AddPersistence(builder.Configuration)
 	.AddInfrastructure()
 	.AddPresentation();
 
-builder.Host.UseSerilog((context, config) =>
-	config.ReadFrom.Configuration(context.Configuration));
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddJwtBearer();
 
+builder.Services.ConfigureOptions<JwtOptionsSetup>();
+builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
+
+builder.Services.AddLogging(loggingBuilder =>
+{
+	loggingBuilder.AddConsole();
+});
+builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
+//builder.Host.UseSerilog((context, config) =>
+//	config.ReadFrom.Configuration(context.Configuration));
+
+builder.Services.AddAuthorization();
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -27,9 +45,17 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
-app.UseSerilogRequestLogging();
+//app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
+
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+
+app.MapControllers();
 
 app.Run();
 
