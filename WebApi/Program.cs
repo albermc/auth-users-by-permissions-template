@@ -6,6 +6,8 @@ using Presentation;
 using Serilog;
 using WebApi.Middlewares;
 using WebApi.OptionsSetup;
+using Microsoft.AspNetCore.Authorization;
+using Infrastructure.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,10 @@ builder.Services
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer();
 
+builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
+
 builder.Services.ConfigureOptions<JwtOptionsSetup>();
 builder.Services.ConfigureOptions<JwtBearerOptionsSetup>();
 
@@ -34,7 +40,6 @@ builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 //builder.Host.UseSerilog((context, config) =>
 //	config.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddAuthorization();
 var app = builder.Build();
 
 
